@@ -1,0 +1,10 @@
+# Data folder
+data/
+
+# Cache files
+cache/
+pycache/
+
+# System files
+.DS_Store
+.idea
