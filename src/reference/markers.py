@@ -1,13 +1,11 @@
+import uuid
 from pathlib import Path
 
 import cv2
-
 import numpy as np
-import logging
-from src.viz import ImagePlotter
+from loguru import logger
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from src.reference.viz import ImagePlotter
 
 
 class ArucoMarkerHandler:
@@ -29,25 +27,26 @@ class ArucoMarkerHandler:
 
         # Check if image path exists, if provided
         if image_path:
-            image_path = Path(image_path)
-            if not image_path.exists():
-                logger.error(f"Image path {image_path} does not exist.")
-                raise FileNotFoundError(f"Image path {image_path} does not exist.")
+            self.image_path = Path(image_path)
+            if not self.image_path.exists():
+                logger.error(f"Image path {self.image_path} does not exist.")
+                raise FileNotFoundError(f"Image path {self.image_path} does not exist.")
 
         # Load the image if needed
-        self.original_image = cv2.imread(image_path) if image_path else image
+        self.original_image = cv2.imread(self.image_path) if hasattr(self, "image_path") else image
+
+        # Get or set the image name and directory
+        self.image_name = self.image_path.stem if hasattr(self, 'image_path') else not f"image_{uuid.uuid4()}"
+        self.image_dir = self.image_path.parent if hasattr(self, 'image_path') else Path(".")
 
         # Convert the image to grayscale and 3-channel grayscale
-        self.gray_image = cv2.cvtColor(self.original_image,
-                                       cv2.COLOR_BGR2GRAY)
+        self.gray_image = cv2.cvtColor(self.original_image, cv2.COLOR_BGR2GRAY)
         self.gray_3channel = cv2.cvtColor(self.gray_image, cv2.COLOR_GRAY2BGR)
 
         # Initialize ArUco marker detector
-        self.aruco_dict = cv2.aruco.getPredefinedDictionary(
-            cv2.aruco.DICT_4X4_100)
+        self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
         self.parameters = cv2.aruco.DetectorParameters()
-        self.detector = cv2.aruco.ArucoDetector(self.aruco_dict,
-                                                self.parameters)
+        self.detector = cv2.aruco.ArucoDetector(self.aruco_dict, self.parameters)
 
         # Initialize attributes
         self.corners = None
@@ -61,8 +60,7 @@ class ArucoMarkerHandler:
         Order markers by their IDs.
         """
         # Detect markers
-        self.corners, self.ids, _ = self.detector.detectMarkers(
-            self.gray_image)
+        self.corners, self.ids, _ = self.detector.detectMarkers(self.gray_image)
 
         # Raise error if more or less than 4 markers are detected
         if len(self.ids) != 4:
@@ -81,16 +79,20 @@ class ArucoMarkerHandler:
             self.corners = [self.corners[i] for i in order]
 
             # Calculate marker centers for alignment
-            self.centers = [self._get_marker_center(corner) for corner in
-                            self.corners]
+            self.centers = [self._get_marker_center(corner) for corner in self.corners]
 
-    def draw_markers(self) -> np.ndarray:
+    def draw_markers(self, outline: bool = True, text:bool = True, mask:bool = True) -> np.ndarray:
         """
         Draw detected markers on the grayscale image.
+
+        :param outline: Draw marker outlines
+        :param text: Draw marker IDs
+        :param mask: Fill the markers with white color
 
         :return: Image with markers drawn
         """
         output_image = self.gray_3channel.copy()
+        color = (200,200,200)
 
         if self.ids is not None:
             for i, corner in enumerate(self.corners):
@@ -98,41 +100,80 @@ class ArucoMarkerHandler:
                 corner = corner[0].astype(np.int32)
 
                 # Draw lines with increased thickness
-                cv2.polylines(output_image, [corner], True, (0, 0, 255),
-                              thickness=5)
+                if outline:
+                    cv2.polylines(output_image, [corner], True, color, thickness=5)
+
+                # Fill the marker with white color
+                if mask:
+                    cv2.fillPoly(output_image, [corner], (255, 255, 255))
 
                 # Draw marker ID
-                cv2.putText(output_image, str(self.ids[i]),self.centers[i].astype(np.int32),
-                            cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 0, 255), 10)
+                if text:
+                    cv2.putText(
+                    output_image,
+                    str(self.ids[i]),
+                    self.centers[i].astype(np.int32),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    3,
+                    color,
+                    10,
+                )
+
+        self.annotated_image = output_image
 
         return output_image
 
-    def align_image(self, height_over_width_ratio: float = 1612 / 2466,
-                    width: int = 1000,
-                    padding: int = 150) -> np.ndarray:
+    def align_image(
+        self,
+        height_over_width_ratio: float = 1612 / 2466,
+        width: int = 1000,
+        padding: int = 150,
+            include_annotations: bool = True,
+        save: bool = False,
+    ) -> np.ndarray:
         """
         Perform perspective transformation to align the image.
 
         :param height_over_width_ratio: Ratio of height to width
         :param width: Desired width of aligned image
         :param padding: Padding added to the transformed image
+        :param include_annotations: Include annotations in the aligned image
+        :param save: Save the aligned image to disk
         """
         # Calculate height based on width and ratio
         height = int(width / height_over_width_ratio)
 
         # Prepare source and destination points
-        src_pts = np.array(self.centers, dtype='float32')
-        dst_pts = np.array([[padding, padding],
-                            [width + padding, padding],
-                            [width + padding, height + padding],
-                            [padding, height + padding]],
-                           dtype='float32')
+        src_pts = np.array(self.centers, dtype="float32")
+        dst_pts = np.array(
+            [
+                [padding, padding],
+                [width + padding, padding],
+                [width + padding, height + padding],
+                [padding, height + padding],
+            ],
+            dtype="float32",
+        )
 
         # Compute perspective transform
         matrix = cv2.getPerspectiveTransform(src_pts, dst_pts)
-        self.aligned_image = cv2.warpPerspective(self.original_image, matrix,
-                                                 (width + 2 * padding,
-                                                  height + 2 * padding))
+
+        if include_annotations:
+            if not hasattr(self, 'annotated_image'):
+                self.draw_markers()
+            image_to_align = self.annotated_image
+        else:
+            image_to_align = self.gray_3channel
+
+        self.aligned_image = cv2.warpPerspective(
+            image_to_align, matrix, (width + 2 * padding, height + 2 * padding)
+        )
+
+        # Save the aligned image if needed
+        if save:
+            file_name_reference = self.image_name + "_aligned.png"
+            file_path_reference = self.image_dir / file_name_reference
+            cv2.imwrite(str(file_path_reference), self.aligned_image)
 
         return self.aligned_image
 
@@ -157,8 +198,7 @@ class ArucoMarkerHandler:
         self.align_image()
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     # Init the plotter
     plotter = ImagePlotter()
