@@ -1,12 +1,17 @@
+"""
+Handles ArUco markers in images.
+
+- Detect ArUco markers in an image.
+- Draw detected markers on the image.
+- Perform perspective transformation to align the image.
+
+"""
 import uuid
 from pathlib import Path
 
 import cv2
 import numpy as np
 from loguru import logger
-from numpy.ma.core import absolute
-
-from src.reference.viz import ImagePlotter
 
 
 class ArucoMarkerHandler:
@@ -197,39 +202,3 @@ class ArucoMarkerHandler:
         """
         self.detect_markers()
         self.align_image()
-
-
-if __name__ == "__main__":
-
-    # Init the plotter
-    plotter = ImagePlotter()
-
-    # Get current directory
-    current_dir = Path(__file__).resolve().parent
-
-    # Go two directories up to get to the project root
-    project_dir = current_dir.parent.parent
-
-    # Go to the data directory
-    data_dir = project_dir / "data"
-
-    # Path to the input image
-    image_path = data_dir / "test_ashkan.png"
-
-    # Process the image
-    processor = ArucoMarkerHandler(image_path)
-    processor.process()
-
-    # Draw detected markers
-    markers_image = processor.draw_markers(mask=False)
-    plotter.plot(markers_image, title="Detected Markers")
-
-    # Align the image
-    aligned_image = processor.align_image()
-    plotter.plot(aligned_image, title="Aligned Image")
-
-    # Draw markers on the aligned image
-    processor = ArucoMarkerHandler(image=aligned_image)
-    processor.detect_markers()
-    markers_image = processor.draw_markers()
-    plotter.plot(markers_image, title="Detected Markers on Aligned Image")

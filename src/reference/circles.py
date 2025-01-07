@@ -1,10 +1,19 @@
+"""
+Find reference circles in an image.
 
+- Detect circles in the grayscale image using Hough Circle Transform.
+- Draw detected circles on the original image.
+- Calculate the number of millimeters per pixel in the image, given the diameter of the reference coin.
+"""
 import cv2
 import numpy as np
 from loguru import logger
 
-TWO_EURO_DIAMETER_MM = 25.75
+# Reference measurements (can be updated with other currencies)
+REFERENCE_MEASUREMENTS = {'TWO_EURO_DIAMETER_MM': 25.75}
 
+# CURRENT (should be set depending on the reference coin)
+REFERENCE_COIN_DIAMETER_MM = REFERENCE_MEASUREMENTS['TWO_EURO_DIAMETER_MM']
 
 class CircleHandler:
     """
@@ -80,7 +89,7 @@ class CircleHandler:
         return output_image
 
     def calculate_mm_per_pixel(
-        self, coin_diameter_mm: float = TWO_EURO_DIAMETER_MM
+        self, coin_diameter_mm: float = REFERENCE_COIN_DIAMETER_MM
     ) -> float:
         """
         Calculate the number of millimeters per pixel in the image.
@@ -94,26 +103,3 @@ class CircleHandler:
 
         return coin_diameter_mm / circle_diameter
 
-
-if __name__ == "__main__":
-
-    # Path to your image
-    image_path = 'data/coins.jpg'
-
-    # Initialize the circle handler
-    circle_processor = CircleHandler(image_path=image_path)
-
-    # Detect circles
-    circle_processor.detect_circles()
-
-    # Draw circles
-    circles_image = circle_processor.draw_circles()
-
-    # Calculate mm per pixel
-    mm_per_pixel = circle_processor.calculate_mm_per_pixel()
-
-    # Display the results
-    logger.info(f"Millimeters per pixel: {mm_per_pixel}")
-    cv2.imshow("Detected Circles", circles_image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()

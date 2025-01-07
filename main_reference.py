@@ -1,7 +1,18 @@
-import cv2
-import numpy as np
-from typing import List, Tuple, Optional
-import logging
+"""
+This script is used to test the reference image processing pipeline.
+
+The pipeline includes:
+1. Detecting ArUco markers in the image
+2. Aligning the image based on the detected markers
+3. Detecting circles in the aligned image
+4. Calculating the mm per pixel based on the detected circle diameter
+
+Next steps:
+- Segment the hand from the aligned image (using an NN or simple thresholding, masking out the markers, logo and coin)
+- Calculate keypoint-based features for the hand (e.g., finger lengths, palm width, etc.)
+- Train a model to predict size based on these features
+"""
+
 from src.reference.markers import ArucoMarkerHandler
 from src.reference.viz import ImagePlotter
 from src.reference.circles import CircleHandler
@@ -9,9 +20,7 @@ from src.reference.circles import CircleHandler
 
 from loguru import logger
 
-
-
-if __name__ == "__main__":
+def main():
 
     # Init the plotter
     plotter = ImagePlotter()
@@ -43,3 +52,6 @@ if __name__ == "__main__":
     # Get the circle diameter and calculate mm per pixel
     mm_per_pixel = circle_processor.calculate_mm_per_pixel()
     logger.info(f"Pixels per mm: {1/mm_per_pixel}")
+
+if __name__ == "__main__":
+    main()
