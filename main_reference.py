@@ -21,7 +21,7 @@ if __name__ == "__main__":
     processor.process()
 
     # Draw detected markers
-    markers_image = processor.draw_markers()
+    markers_image = processor.draw_markers(mask=False)
     plotter.plot(markers_image, title="Detected Markers")
 
     # Align the image
@@ -29,16 +29,17 @@ if __name__ == "__main__":
     plotter.plot(aligned_image, title="Aligned Image")
 
     # Draw markers on the aligned image
-    # processor = ArucoMarkerHandler(image=aligned_image)
-    # processor.detect_markers()
-    # aligned_markers_image = processor.draw_markers()
-    # plotter.plot(aligned_markers_image, title="Detected Markers on Aligned Image")
+    processor = ArucoMarkerHandler(image=aligned_image)
+    processor.detect_markers()
+    aligned_markers_image = processor.draw_markers()
+    plotter.plot(aligned_markers_image, title="Detected Markers on Aligned Image")
 
     # Detect circles
-    circle_processor = CircleHandler(image=aligned_image)
+    circle_processor = CircleHandler(image=aligned_markers_image)
     circle_processor.detect_circles()
     circles_image = circle_processor.draw_circles()
     plotter.plot(circles_image, title="Detected Circles")
 
     # Get the circle diameter and calculate mm per pixel
     mm_per_pixel = circle_processor.calculate_mm_per_pixel()
+    logger.info(f"Pixels per mm: {1/mm_per_pixel}")

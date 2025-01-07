@@ -1,5 +1,5 @@
 # Data folder
-data/
+#data/
 
 # Cache files
 cache/
@@ -8,3 +8,7 @@ pycache/
 # System files
 .DS_Store
 .idea
+
+# Virtual environment
+.venv/
+

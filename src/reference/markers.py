@@ -4,6 +4,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 from loguru import logger
+from numpy.ma.core import absolute
 
 from src.reference.viz import ImagePlotter
 
@@ -14,7 +15,7 @@ class ArucoMarkerHandler:
     and detect circles.
     """
 
-    def __init__(self, image_path: str = None, image: np.ndarray = None):
+    def __init__(self, image_path: str|Path = None, image: np.ndarray = None):
         """
         Initialize the processor with an image.
 
@@ -27,7 +28,7 @@ class ArucoMarkerHandler:
 
         # Check if image path exists, if provided
         if image_path:
-            self.image_path = Path(image_path)
+            self.image_path = Path(image_path) if isinstance(image_path, str) else image_path
             if not self.image_path.exists():
                 logger.error(f"Image path {self.image_path} does not exist.")
                 raise FileNotFoundError(f"Image path {self.image_path} does not exist.")
@@ -203,12 +204,24 @@ if __name__ == "__main__":
     # Init the plotter
     plotter = ImagePlotter()
 
+    # Get current directory
+    current_dir = Path(__file__).resolve().parent
+
+    # Go two directories up to get to the project root
+    project_dir = current_dir.parent.parent
+
+    # Go to the data directory
+    data_dir = project_dir / "data"
+
+    # Path to the input image
+    image_path = data_dir / "test_ashkan.png"
+
     # Process the image
-    processor = ArucoMarkerHandler("data/test_ashkan.png")
+    processor = ArucoMarkerHandler(image_path)
     processor.process()
 
     # Draw detected markers
-    markers_image = processor.draw_markers()
+    markers_image = processor.draw_markers(mask=False)
     plotter.plot(markers_image, title="Detected Markers")
 
     # Align the image

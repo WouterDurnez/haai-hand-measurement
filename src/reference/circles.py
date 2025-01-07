@@ -93,3 +93,27 @@ class CircleHandler:
         circle_diameter = 2 * self.circles[0, 0, 2]
 
         return coin_diameter_mm / circle_diameter
+
+
+if __name__ == "__main__":
+
+    # Path to your image
+    image_path = 'data/coins.jpg'
+
+    # Initialize the circle handler
+    circle_processor = CircleHandler(image_path=image_path)
+
+    # Detect circles
+    circle_processor.detect_circles()
+
+    # Draw circles
+    circles_image = circle_processor.draw_circles()
+
+    # Calculate mm per pixel
+    mm_per_pixel = circle_processor.calculate_mm_per_pixel()
+
+    # Display the results
+    logger.info(f"Millimeters per pixel: {mm_per_pixel}")
+    cv2.imshow("Detected Circles", circles_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
