@@ -5,15 +5,17 @@ Find reference circles in an image.
 - Draw detected circles on the original image.
 - Calculate the number of millimeters per pixel in the image, given the diameter of the reference coin.
 """
+
 import cv2
 import numpy as np
 from loguru import logger
 
 # Reference measurements (can be updated with other currencies)
-REFERENCE_MEASUREMENTS = {'TWO_EURO_DIAMETER_MM': 25.75}
+REFERENCE_MEASUREMENTS = {"TWO_EURO_DIAMETER_MM": 25.75}
 
 # CURRENT (should be set depending on the reference coin)
-REFERENCE_COIN_DIAMETER_MM = REFERENCE_MEASUREMENTS['TWO_EURO_DIAMETER_MM']
+REFERENCE_COIN_DIAMETER_MM = REFERENCE_MEASUREMENTS["TWO_EURO_DIAMETER_MM"]
+
 
 class CircleHandler:
     """
@@ -102,4 +104,3 @@ class CircleHandler:
         circle_diameter = 2 * self.circles[0, 0, 2]
 
         return coin_diameter_mm / circle_diameter
-

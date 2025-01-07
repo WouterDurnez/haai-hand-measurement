@@ -13,12 +13,12 @@ Next steps:
 - Train a model to predict size based on these features
 """
 
+from loguru import logger
+
+from src.reference.circles import CircleHandler
 from src.reference.markers import ArucoMarkerHandler
 from src.reference.viz import ImagePlotter
-from src.reference.circles import CircleHandler
 
-
-from loguru import logger
 
 def main():
 
@@ -52,6 +52,7 @@ def main():
     # Get the circle diameter and calculate mm per pixel
     mm_per_pixel = circle_processor.calculate_mm_per_pixel()
     logger.info(f"Pixels per mm: {1/mm_per_pixel}")
+
 
 if __name__ == "__main__":
     main()

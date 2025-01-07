@@ -6,6 +6,7 @@ Handles ArUco markers in images.
 - Perform perspective transformation to align the image.
 
 """
+
 import uuid
 from pathlib import Path
 
@@ -20,7 +21,7 @@ class ArucoMarkerHandler:
     and detect circles.
     """
 
-    def __init__(self, image_path: str|Path = None, image: np.ndarray = None):
+    def __init__(self, image_path: str | Path = None, image: np.ndarray = None):
         """
         Initialize the processor with an image.
 
@@ -33,17 +34,27 @@ class ArucoMarkerHandler:
 
         # Check if image path exists, if provided
         if image_path:
-            self.image_path = Path(image_path) if isinstance(image_path, str) else image_path
+            self.image_path = (
+                Path(image_path) if isinstance(image_path, str) else image_path
+            )
             if not self.image_path.exists():
                 logger.error(f"Image path {self.image_path} does not exist.")
                 raise FileNotFoundError(f"Image path {self.image_path} does not exist.")
 
         # Load the image if needed
-        self.original_image = cv2.imread(self.image_path) if hasattr(self, "image_path") else image
+        self.original_image = (
+            cv2.imread(self.image_path) if hasattr(self, "image_path") else image
+        )
 
         # Get or set the image name and directory
-        self.image_name = self.image_path.stem if hasattr(self, 'image_path') else not f"image_{uuid.uuid4()}"
-        self.image_dir = self.image_path.parent if hasattr(self, 'image_path') else Path(".")
+        self.image_name = (
+            self.image_path.stem
+            if hasattr(self, "image_path")
+            else not f"image_{uuid.uuid4()}"
+        )
+        self.image_dir = (
+            self.image_path.parent if hasattr(self, "image_path") else Path(".")
+        )
 
         # Convert the image to grayscale and 3-channel grayscale
         self.gray_image = cv2.cvtColor(self.original_image, cv2.COLOR_BGR2GRAY)
@@ -87,7 +98,9 @@ class ArucoMarkerHandler:
             # Calculate marker centers for alignment
             self.centers = [self._get_marker_center(corner) for corner in self.corners]
 
-    def draw_markers(self, outline: bool = True, text:bool = True, mask:bool = True) -> np.ndarray:
+    def draw_markers(
+        self, outline: bool = True, text: bool = True, mask: bool = True
+    ) -> np.ndarray:
         """
         Draw detected markers on the grayscale image.
 
@@ -98,7 +111,7 @@ class ArucoMarkerHandler:
         :return: Image with markers drawn
         """
         output_image = self.gray_3channel.copy()
-        color = (200,200,200)
+        color = (200, 200, 200)
 
         if self.ids is not None:
             for i, corner in enumerate(self.corners):
@@ -116,14 +129,14 @@ class ArucoMarkerHandler:
                 # Draw marker ID
                 if text:
                     cv2.putText(
-                    output_image,
-                    str(self.ids[i]),
-                    self.centers[i].astype(np.int32),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    3,
-                    color,
-                    10,
-                )
+                        output_image,
+                        str(self.ids[i]),
+                        self.centers[i].astype(np.int32),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        3,
+                        color,
+                        10,
+                    )
 
         self.annotated_image = output_image
 
@@ -134,7 +147,7 @@ class ArucoMarkerHandler:
         height_over_width_ratio: float = 1612 / 2466,
         width: int = 1000,
         padding: int = 150,
-            include_annotations: bool = True,
+        include_annotations: bool = True,
         save: bool = False,
     ) -> np.ndarray:
         """
@@ -165,7 +178,7 @@ class ArucoMarkerHandler:
         matrix = cv2.getPerspectiveTransform(src_pts, dst_pts)
 
         if include_annotations:
-            if not hasattr(self, 'annotated_image'):
+            if not hasattr(self, "annotated_image"):
                 self.draw_markers()
             image_to_align = self.annotated_image
         else:
